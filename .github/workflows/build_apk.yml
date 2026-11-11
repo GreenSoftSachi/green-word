@@ -1,4 +1,4 @@
-name: Build Green Word v6 (APK and AAB)
+name: Build Green Word v7 (APK and AAB)
 
 on:
   push:
@@ -32,20 +32,20 @@ jobs:
     - name: Prepare Artifacts
       run: |
         mkdir -p dist
-        cp android/app/build/outputs/apk/release/*.apk dist/Green-Word-v6.apk
-        cp android/app/build/outputs/bundle/release/*.aab dist/Green-Word-v6.aab
+        cp android/app/build/outputs/apk/release/*.apk dist/Green-Word-v7.apk
+        cp android/app/build/outputs/bundle/release/*.aab dist/Green-Word-v7.aab
         ls -la dist/
 
     - name: Upload Release APK
       uses: actions/upload-artifact@v4
       with:
-        name: Green-Word-v6-APK
-        path: dist/Green-Word-v6.apk
+        name: Green-Word-v7-APK
+        path: dist/Green-Word-v7.apk
         retention-days: 30
 
     - name: Upload Play Store AAB Bundle
       uses: actions/upload-artifact@v4
       with:
-        name: Green-Word-v6-AAB
-        path: dist/Green-Word-v6.aab
+        name: Green-Word-v7-AAB
+        path: dist/Green-Word-v7.aab
         retention-days: 30
