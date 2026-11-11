@@ -47,6 +47,9 @@ public class MainActivity extends AppCompatActivity {
                 ViewGroup.LayoutParams.MATCH_PARENT
         ));
         webView.setBackgroundColor(Color.parseColor("#F3F4F6"));
+        webView.setFocusable(true);
+        webView.setFocusableInTouchMode(true);
+        webView.requestFocus(View.FOCUS_DOWN);
         setContentView(webView);
 
         WebSettings settings = webView.getSettings();
@@ -135,9 +138,22 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface
         public void showKeyboard() {
             activity.runOnUiThread(() -> {
+                webView.requestFocus();
                 InputMethodManager imm = (InputMethodManager) activity.getSystemService(Context.INPUT_METHOD_SERVICE);
                 if (imm != null) {
-                    imm.showSoftInput(webView, InputMethodManager.SHOW_IMPLICIT);
+                    imm.showSoftInput(webView, InputMethodManager.SHOW_FORCED);
+                    imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void toggleKeyboard() {
+            activity.runOnUiThread(() -> {
+                webView.requestFocus();
+                InputMethodManager imm = (InputMethodManager) activity.getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
                 }
             });
         }

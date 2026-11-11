@@ -12,13 +12,13 @@
       let cur = {};
       try { cur = JSON.parse(localStorage.getItem('wordcraft.ui') || '{}'); } catch(e){}
       cur.showDiscord = false;
-      if (cur.author === 'Sachinthaka Sandaruwan') {
+      if (cur.author === 'Sachinthaka Sandaruwan' || cur.author === 'WordCraft User' || cur.author === 'GreenWord User') {
         delete cur.author;
       }
       localStorage.setItem('wordcraft.ui', JSON.stringify(cur));
     } catch(err){}
 
-    // Pre-install Sinhala Unicode fonts into IndexedDB ('wordcraft' -> 'fonts') before WASM engine starts
+    // Pre-install Sinhala Unicode fonts into IndexedDB before WASM engine starts
     async function preloadSinhalaFonts() {
       try {
         const db = await new Promise((resolve, reject) => {
@@ -94,7 +94,7 @@
     /* Backstage Bottom-Left Developer Profile Dock (ONLY shown inside File/Backstage menu) */
     #green_sidebar_dock {
       position: fixed; bottom: 0; left: 0; width: 200px;
-      background: linear-gradient(180deg, #3b5bdb, #2b48c5);
+      background: linear-gradient(180deg, #185ABD, #0e3a7c);
       padding: 10px 12px; box-sizing: border-box;
       border-top: 1px solid rgba(255,255,255,0.2);
       z-index: 60; display: none; cursor: pointer; user-select: none;
@@ -111,6 +111,23 @@
       box-shadow: 0 4px 14px rgba(0,0,0,0.25);
       display: none; align-items: center; gap: 6px;
       cursor: pointer; z-index: 999; font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    /* Floating Keyboard Toggle Button (Guaranteed 1-tap virtual keyboard access) */
+    #green_keyboard_toggle {
+      position: fixed; bottom: 36px; right: 14px;
+      background: #185ABD; color: #ffffff;
+      border: none; border-radius: 50%;
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 14px rgba(24,90,189,0.4);
+      z-index: 850; cursor: pointer;
+      user-select: none; -webkit-tap-highlight-color: transparent;
+      transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+    #green_keyboard_toggle:active {
+      transform: scale(0.92);
+      background: #0e3a7c;
     }
   </style>
 
@@ -135,6 +152,22 @@
     <span>Exit Read Mode</span>
   </div>
 
+  <!-- Floating Keyboard Toggle Button (Guaranteed 1-tap virtual keyboard access) -->
+  <div id="green_keyboard_toggle" onclick="toggleVirtualKeyboard()" title="Show/Hide Keyboard">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+      <line x1="6" y1="8" x2="6" y2="8"></line>
+      <line x1="10" y1="8" x2="10" y2="8"></line>
+      <line x1="14" y1="8" x2="14" y2="8"></line>
+      <line x1="18" y1="8" x2="18" y2="8"></line>
+      <line x1="6" y1="12" x2="6" y2="12"></line>
+      <line x1="10" y1="12" x2="10" y2="12"></line>
+      <line x1="14" y1="12" x2="14" y2="12"></line>
+      <line x1="18" y1="12" x2="18" y2="12"></line>
+      <line x1="7" y1="16" x2="17" y2="16"></line>
+    </svg>
+  </div>
+
   <!-- Backstage Sidebar Bottom Dock (Docked ONLY in File menu at bottom-left) -->
   <div id="green_sidebar_dock" onclick="toggleGreenAbout(true)">
     <div style="display:flex;align-items:center;gap:10px;">
@@ -156,7 +189,7 @@
         <button onclick="toggleGreenAbout(false)" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.2);border:none;color:#fff;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;line-height:1;">&times;</button>
         <div style="font-size:11px;letter-spacing:1.2px;text-transform:uppercase;opacity:0.88;font-weight:700;">Office Suite 2026</div>
         <div style="font-size:24px;font-weight:800;margin-top:2px;letter-spacing:-0.4px;">Green Word</div>
-        <div style="font-size:11.5px;background:rgba(255,255,255,0.22);display:inline-block;padding:3px 12px;border-radius:12px;margin-top:6px;font-weight:700;">Pro Edition &bull; v1.0.0 (Build 2)</div>
+        <div style="font-size:11.5px;background:rgba(255,255,255,0.22);display:inline-block;padding:3px 12px;border-radius:12px;margin-top:6px;font-weight:700;">Pro Edition &bull; v1.0.1</div>
       </div>
       
       <!-- Photo Avatar -->
@@ -179,24 +212,20 @@
             <div style="color:#64748b;margin-top:2px;">Compiled WASM Core</div>
           </div>
           <div style="background:#f8fafc;padding:8px 10px;border-radius:10px;border:1px solid #e2e8f0;">
-            <div style="font-weight:700;color:#185ABD;">File Format</div>
-            <div style="color:#64748b;margin-top:2px;">DOCX, DOC, PDF, RTF</div>
+            <div style="font-weight:700;color:#185ABD;">Typography</div>
+            <div style="color:#64748b;margin-top:2px;">Sinhala Unicode Built-in</div>
           </div>
           <div style="background:#f8fafc;padding:8px 10px;border-radius:10px;border:1px solid #e2e8f0;">
-            <div style="font-weight:700;color:#185ABD;">Sinhala Fonts</div>
-            <div style="color:#64748b;margin-top:2px;">Noto Sans & Serif</div>
+            <div style="font-weight:700;color:#185ABD;">Document Format</div>
+            <div style="color:#64748b;margin-top:2px;">DOCX, RTF, PDF, TXT</div>
           </div>
           <div style="background:#f8fafc;padding:8px 10px;border-radius:10px;border:1px solid #e2e8f0;">
-            <div style="font-weight:700;color:#185ABD;">Security</div>
-            <div style="color:#64748b;margin-top:2px;">100% Offline</div>
+            <div style="font-weight:700;color:#185ABD;">Privacy & Security</div>
+            <div style="color:#64748b;margin-top:2px;">100% Offline & Private</div>
           </div>
         </div>
 
-        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:6px 10px;font-size:10.5px;color:#1d4ed8;font-weight:700;margin-bottom:12px;">
-          ✔ Google Play Store Certified &bull; com.greensoft.greenword
-        </div>
-
-        <button onclick="toggleGreenAbout(false)" style="width:100%;padding:11px;border:none;background:#185ABD;color:#fff;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 4px 12px rgba(24,90,189,0.3);">Close</button>
+        <button onclick="toggleGreenAbout(false)" style="width:100%;padding:11px;border:none;background:#185ABD;color:#fff;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 4px 12px rgba(24,90,189,0.25);">Close</button>
       </div>
     </div>
   </div>
@@ -238,6 +267,27 @@
       if (btn) btn.style.display = 'none';
     }
 
+    // 1-Tap Virtual Keyboard Trigger
+    function toggleVirtualKeyboard() {
+      var A = window.GreenWordAndroid || window.GreenOfficeAndroid;
+      // Focus text agent input
+      var inp = document.querySelector('input[type="text"]') || document.querySelector('.text-agent') || document.querySelector('input');
+      if (inp) {
+        try {
+          inp.style.pointerEvents = 'auto';
+          inp.focus({ preventScroll: true });
+        } catch(e) {}
+      }
+      if (A) {
+        if (A.toggleKeyboard) {
+          A.toggleKeyboard();
+        } else if (A.showKeyboard) {
+          A.showKeyboard();
+        }
+      }
+    }
+    window.triggerSoftKeyboard = toggleVirtualKeyboard;
+
     // Dynamic detector for Backstage state
     function checkBackstageState() {
       var dock = document.getElementById('green_sidebar_dock');
@@ -258,43 +308,87 @@
       try {
         var pLeft = new Uint8Array(4);
         gl.readPixels(Math.floor(w * 0.05), Math.floor(h * 0.5), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pLeft);
-        // Backstage blue sidebar: B > 140, R < 100
+        // Backstage deep blue sidebar: B > 140, R < 100
         var isBlueSidebar = (pLeft[2] > 140 && pLeft[0] < 100);
 
         if (isBlueSidebar) {
-          dock.style.display = 'block';
-        } else {
-          dock.style.display = 'none';
+          var pRight = new Uint8Array(4);
+          gl.readPixels(Math.floor(w * 0.4), Math.floor(h * 0.5), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pRight);
+          // Backstage pane: light/white background (R, G, B > 210)
+          var isLightPane = (pRight[0] > 210 && pRight[1] > 210 && pRight[2] > 210);
+
+          if (isLightPane) {
+            dock.style.display = 'block';
+            return;
+          }
         }
-      } catch (err) {
-        dock.style.display = 'none';
-      }
+      } catch (err) {}
+
+      dock.style.display = 'none';
     }
 
     setInterval(checkBackstageState, 350);
 
-    // Intercept clicks on canvas for bottom-left About & detect Read Mode toggle
-    window.addEventListener('load', function() {
-      var c = document.getElementById('wordcraft_canvas');
-      if (c) {
-        c.addEventListener('click', function(e) {
-          var rect = c.getBoundingClientRect();
-          // If clicked in bottom-left 200px and bottom 60px inside Backstage
-          var dock = document.getElementById('green_sidebar_dock');
-          if (dock && dock.style.display === 'block') {
-            if (e.clientX < 200 && e.clientY > rect.height - 60) {
-              toggleGreenAbout(true);
-            }
-          }
+    // Tap-to-type touch listener for Android
+    (function () {
+      var A = window.GreenWordAndroid || window.GreenOfficeAndroid;
+      var lastTouch = -1e9, lastShow = -1e9;
 
-          // If Book Mode icon clicked at bottom (~57% to 60% width, bottom 24px)
-          if (e.clientX > rect.width * 0.55 && e.clientX < rect.width * 0.60 && e.clientY > rect.height - 24) {
-            var exitBtn = document.getElementById('green_exit_read_mode');
-            if (exitBtn) exitBtn.style.display = 'flex';
-          }
-        }, true);
+      function showSoftKeyboard() {
+        var now = Date.now();
+        if (now - lastShow < 300) return;
+        lastShow = now;
+        var inp = document.querySelector('input[type="text"]') || document.querySelector('.text-agent') || document.querySelector('input');
+        if (inp) {
+          try {
+            inp.style.pointerEvents = 'auto';
+            inp.focus({ preventScroll: true });
+          } catch(e) {}
+        }
+        if (A && A.showKeyboard) {
+          A.showKeyboard();
+        }
       }
-    });
+
+      document.addEventListener('touchstart', function () {
+        lastTouch = Date.now();
+      }, true);
+
+      document.addEventListener('touchend', function (e) {
+        lastTouch = Date.now();
+        var c = document.getElementById('wordcraft_canvas');
+        if (!c || e.target !== c) return;
+        
+        var touch = e.changedTouches ? e.changedTouches[0] : e;
+        var rect = c.getBoundingClientRect();
+        
+        // If clicked in bottom-left inside Backstage
+        var dock = document.getElementById('green_sidebar_dock');
+        if (dock && dock.style.display === 'block') {
+          if (touch.clientX < 200 && touch.clientY > rect.height - 60) {
+            toggleGreenAbout(true);
+            return;
+          }
+        }
+
+        // If Book Mode icon clicked at bottom (~55% to 60% width, bottom 24px)
+        if (touch.clientX > rect.width * 0.55 && touch.clientX < rect.width * 0.60 && touch.clientY > rect.height - 24) {
+          var exitBtn = document.getElementById('green_exit_read_mode');
+          if (exitBtn) exitBtn.style.display = 'flex';
+        }
+
+        // If tapping document area (between top ribbon 110px and bottom bar 35px)
+        if (touch.clientY > 115 && touch.clientY < (rect.height - 35)) {
+          setTimeout(showSoftKeyboard, 100);
+        }
+      }, true);
+
+      document.addEventListener('focusin', function (e) {
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+          if (A && A.showKeyboard) A.showKeyboard();
+        }
+      }, true);
+    })();
   </script>
 </body>
 </html>
