@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Green Word</title>
+  <link rel="icon" href="./app_icon.png" />
+  
+  <script>
+    // Anti-Open-Source Hardening: Set author and disable community/discord buttons
+    try {
+      let cur = {};
+      try { cur = JSON.parse(localStorage.getItem('wordcraft.ui') || '{}'); } catch(e){}
+      cur.showDiscord = false;
+      cur.author = 'Sachinthaka Sandaruwan';
+      localStorage.setItem('wordcraft.ui', JSON.stringify(cur));
+    } catch(err){}
+  </script>
+
+  <script type="module">
+    import init, * as bindings from './wordcraft-web-d5f8e062bd3e686e.js';
+    const wasm = await init({ module_or_path: './wordcraft-web-d5f8e062bd3e686e_bg.wasm' });
+    window.wasmBindings = bindings;
+    dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
+    
+    // Fade out loading screen once WASM initializes
+    setTimeout(() => {
+      const loader = document.getElementById('green_word_loading');
+      if (loader) {
+        loader.style.opacity = '0';
+        setTimeout(() => loader.style.display = 'none', 300);
+      }
+    }, 1800);
+  </script>
+
+  <style>
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #f3f4f6; }
+    #wordcraft_canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    
+    #green_word_loading {
+      position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: #1e293b; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f8fafc; z-index: 100; transition: opacity 0.3s ease;
+    }
+    
+    @keyframes pulse { 0% { opacity: 0.6; transform: scale(0.98); } 50% { opacity: 1; transform: scale(1.02); } 100% { opacity: 0.6; transform: scale(0.98); } }
+    @keyframes popIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+    
+    /* Top-Right Word Pro Badge covering any residual community button */
+    #green_top_badge {
+      position: fixed; top: 9px; right: 60px; height: 32px;
+      background: #ffffff; border: 1px solid #cbd5e1; border-radius: 16px;
+      padding: 0 12px; display: flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 700; color: #185ABD; box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      z-index: 50; cursor: pointer; user-select: none; font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    /* Backstage Bottom-Left Developer Profile Dock */
+    #green_sidebar_dock {
+      position: fixed; bottom: 0; left: 0; width: 200px;
+      background: linear-gradient(180deg, #3b5bdb, #2b48c5);
+      padding: 10px 12px; box-sizing: border-box;
+      border-top: 1px solid rgba(255,255,255,0.2);
+      z-index: 60; display: block; cursor: pointer; user-select: none;
+      font-family: system-ui, -apple-system, sans-serif; color: #ffffff;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
+    }
+  </style>
+
+  <link rel="modulepreload" href="./wordcraft-web-d5f8e062bd3e686e.js" crossorigin="anonymous">
+  <link rel="modulepreload" href="./snippets/eframe-d31a8450ea12dfc1/inline0.js" crossorigin="anonymous">
+  <link rel="preload" href="./wordcraft-web-d5f8e062bd3e686e_bg.wasm" crossorigin="anonymous" as="fetch" type="application/wasm">
+</head>
+<body>
+  <canvas id="wordcraft_canvas"></canvas>
+  
+  <!-- Loading Splash Screen -->
+  <div id="green_word_loading">
+    <img src="./app_icon.png" style="width: 80px; height: 80px; margin-bottom: 16px; border-radius: 18px; box-shadow: 0 8px 24px rgba(24,90,189,0.3); animation: pulse 2s infinite ease-in-out;" alt="Green Word" />
+    <div style="font-size: 22px; font-weight: 800; color: #185ABD; letter-spacing: -0.4px;">Green Word</div>
+    <div style="font-size: 13px; color: #64748b; margin-top: 4px; font-weight: 500;">Office Suite 2026 Pro</div>
+    <div style="font-size: 11px; color: #94a3b8; margin-top: 18px;">Loading workspace&hellip;</div>
+  </div>
+
+  <!-- Top Right Rebranded Pro Badge -->
+  <div id="green_top_badge" onclick="toggleGreenAbout(true)" title="About Green Word Pro">
+    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#10b981;"></span>
+    <span>Green Word Pro</span>
+  </div>
+
+  <!-- Backstage Sidebar Bottom Dock (Covers upstream text with Sachinthaka's profile) -->
+  <div id="green_sidebar_dock" onclick="toggleGreenAbout(true)">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <img src="./sachinthaka_photo.jpg" alt="Sachinthaka Sandaruwan" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #ffffff;box-shadow:0 2px 6px rgba(0,0,0,0.2);flex-shrink:0;" />
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:11.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Sachinthaka S.</div>
+        <div style="font-size:9.5px;opacity:0.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">R&D Engineer</div>
+        <div style="font-size:9px;color:#93c5fd;font-weight:600;">Green Soft Tech</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating About Trigger Button (Bottom Right) -->
+  <div id="green_about_trigger" onclick="toggleGreenAbout(true)" title="About Green Word" style="position:fixed;bottom:14px;right:14px;width:34px;height:34px;border-radius:50%;background:#185ABD;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.3);cursor:pointer;z-index:50;font-family:system-ui,sans-serif;user-select:none;transition:transform 0.2s;">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+  </div>
+
+  <!-- Full About Screen Modal Dialog -->
+  <div id="green_about_modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);backdrop-filter:blur(4px);z-index:10000;align-items:center;justify-content:center;font-family:system-ui,-apple-system,sans-serif;padding:16px;">
+    <div style="background:#fff;border-radius:22px;max-width:370px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,0.35);overflow:hidden;animation:popIn 0.22s ease-out;position:relative;text-align:center;">
+      
+      <!-- Top Header Gradient -->
+      <div style="background:linear-gradient(135deg,#185ABD,#0e3a7c);padding:24px 20px 48px;color:#fff;position:relative;">
+        <button onclick="toggleGreenAbout(false)" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.2);border:none;color:#fff;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;line-height:1;">&times;</button>
+        <div style="font-size:11px;letter-spacing:1.2px;text-transform:uppercase;opacity:0.88;font-weight:700;">Office Suite 2026</div>
+        <div style="font-size:24px;font-weight:800;margin-top:2px;letter-spacing:-0.4px;">Green Word</div>
+        <div style="font-size:11.5px;background:rgba(255,255,255,0.22);display:inline-block;padding:3px 12px;border-radius:12px;margin-top:6px;font-weight:700;">Pro Edition &bull; v1.0.0 (Build 1)</div>
+      </div>
+      
+      <!-- Photo Avatar -->
+      <div style="margin-top:-44px;position:relative;display:inline-block;">
+        <img src="./sachinthaka_photo.jpg" alt="Sachinthaka Sandaruwan" style="width:88px;height:88px;border-radius:50%;object-fit:cover;border:4px solid #fff;box-shadow:0 4px 16px rgba(0,0,0,0.22);" />
+      </div>
+
+      <!-- Developer Details -->
+      <div style="padding:10px 22px 22px;">
+        <div style="font-size:18px;font-weight:800;color:#1e293b;">Sachinthaka Sandaruwan</div>
+        <div style="font-size:12px;color:#185ABD;font-weight:700;margin-top:3px;line-height:1.4;">Research and Development Engineer<br><span style="color:#64748b;font-weight:600;">(Software and Hardware)</span></div>
+        <div style="font-size:12.5px;color:#0f172a;font-weight:700;margin-top:4px;">Green Soft Technologies</div>
+
+        <div style="margin:14px 0;height:1px;background:#e2e8f0;"></div>
+
+        <!-- Specifications Grid -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left;font-size:11px;color:#334155;margin-bottom:14px;">
+          <div style="background:#f8fafc;padding:8px 10px;border-radius:10px;border:1px solid #e2e8f0;">
+            <div style="font-weight:700;color:#185ABD;">Core Engine</div>
+            <div style="color:#64748b;margin-top:2px;">Compiled WASM Core</div>
+          </div>
+          <div style="background:#f8fafc;padding:8px 10px;border-radius:10px;border:1px solid #e2e8f0;">
+            <div style="font-weight:700;color:#185ABD;">File Format</div>
+            <div style="color:#64748b;margin-top:2px;">DOCX, DOC, PDF, RTF</div>
+          </div>
+          <div style="background:#f8fafc;padding:8px 10px;border-radius:10px;border:1px solid #e2e8f0;">
+            <div style="font-weight:700;color:#185ABD;">Ribbon Engine</div>
+            <div style="color:#64748b;margin-top:2px;">Word 2026 UI</div>
+          </div>
+          <div style="background:#f8fafc;padding:8px 10px;border-radius:10px;border:1px solid #e2e8f0;">
+            <div style="font-weight:700;color:#185ABD;">Security</div>
+            <div style="color:#64748b;margin-top:2px;">100% Offline</div>
+          </div>
+        </div>
+
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:6px 10px;font-size:10.5px;color:#1d4ed8;font-weight:700;margin-bottom:12px;">
+          ✔ Google Play Store Certified &bull; com.greensoft.greenword
+        </div>
+
+        <button onclick="toggleGreenAbout(false)" style="width:100%;padding:11px;border:none;background:#185ABD;color:#fff;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 4px 12px rgba(24,90,189,0.3);">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var origGetContext = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (type, attribs) {
+      if (type && type.indexOf('webgl') !== -1) {
+        attribs = attribs || {};
+        attribs.preserveDrawingBuffer = true;
+      }
+      var ctx = origGetContext.call(this, type, attribs);
+      if (type && type.indexOf('webgl') !== -1) {
+        window.globalGL = ctx;
+      }
+      return ctx;
+    };
+
+    function toggleGreenAbout(show) {
+      var modal = document.getElementById('green_about_modal');
+      if (modal) modal.style.display = show ? 'flex' : 'none';
+    }
+
+    // Dynamic detector for Backstage state
+    function checkBackstageState() {
+      var dock = document.getElementById('green_sidebar_dock');
+      if (!dock) return;
+
+      if (!window.globalGL) {
+        dock.style.display = 'block';
+        return;
+      }
+      var gl = window.globalGL;
+      var w = gl.drawingBufferWidth;
+      var h = gl.drawingBufferHeight;
+      if (!w || !h) {
+        dock.style.display = 'block';
+        return;
+      }
+
+      try {
+        var pLeft = new Uint8Array(4);
+        gl.readPixels(Math.floor(w * 0.05), Math.floor(h * 0.5), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pLeft);
+        var isBlueSidebar = (pLeft[2] > 120 && pLeft[0] < 120);
+
+        if (isBlueSidebar) {
+          dock.style.display = 'block';
+        } else {
+          dock.style.display = 'none';
+        }
+      } catch (err) {
+        dock.style.display = 'block';
+      }
+    }
+
+    setInterval(checkBackstageState, 350);
+
+    // Intercept clicks on canvas for bottom-left About
+    window.addEventListener('load', function() {
+      var c = document.getElementById('wordcraft_canvas');
+      if (c) {
+        c.addEventListener('click', function(e) {
+          var rect = c.getBoundingClientRect();
+          if (e.clientX < 200 && e.clientY > rect.height - 60) {
+            toggleGreenAbout(true);
+          }
+        }, true);
+      }
+    });
+  </script>
+</body>
+</html>
