@@ -7,17 +7,62 @@
   <link rel="icon" href="./app_icon.png" />
   
   <script>
-    // Anti-Open-Source Hardening: Set author and disable community/discord buttons
+    // Anti-Open-Source Hardening: Disable community/discord buttons; leave user name for actual end-user
     try {
       let cur = {};
       try { cur = JSON.parse(localStorage.getItem('wordcraft.ui') || '{}'); } catch(e){}
       cur.showDiscord = false;
-      cur.author = 'Sachinthaka Sandaruwan';
+      if (cur.author === 'Sachinthaka Sandaruwan') {
+        delete cur.author;
+      }
       localStorage.setItem('wordcraft.ui', JSON.stringify(cur));
     } catch(err){}
+
+    // Pre-install Sinhala Unicode fonts into IndexedDB ('wordcraft' -> 'fonts') before WASM engine starts
+    async function preloadSinhalaFonts() {
+      try {
+        const db = await new Promise((resolve, reject) => {
+          const req = indexedDB.open('wordcraft', 1);
+          req.onupgradeneeded = () => {
+            if (!req.result.objectStoreNames.contains('fonts')) {
+              req.result.createObjectStore('fonts');
+            }
+          };
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+
+        const fonts = [
+          { name: 'NotoSansSinhala-Regular.ttf', path: './fonts/NotoSansSinhala-Regular.ttf' },
+          { name: 'NotoSerifSinhala-Regular.ttf', path: './fonts/NotoSerifSinhala-Regular.ttf' }
+        ];
+
+        for (const f of fonts) {
+          const hasFont = await new Promise((res) => {
+            const tx = db.transaction('fonts', 'readonly');
+            const getReq = tx.objectStore('fonts').get(f.name);
+            getReq.onsuccess = () => res(!!getReq.result);
+            getReq.onerror = () => res(false);
+          });
+
+          if (!hasFont) {
+            const resp = await fetch(f.path);
+            const buf = await resp.arrayBuffer();
+            const writeTx = db.transaction('fonts', 'readwrite');
+            writeTx.objectStore('fonts').put(new Uint8Array(buf), f.name);
+          }
+        }
+        db.close();
+      } catch (err) {
+        console.warn('Preload fonts warning:', err);
+      }
+    }
   </script>
 
   <script type="module">
+    // Pre-populate Sinhala fonts into storage before starting WASM
+    await preloadSinhalaFonts();
+
     import init, * as bindings from './wordcraft-web-d5f8e062bd3e686e.js';
     const wasm = await init({ module_or_path: './wordcraft-web-d5f8e062bd3e686e_bg.wasm' });
     window.wasmBindings = bindings;
@@ -46,24 +91,26 @@
     @keyframes pulse { 0% { opacity: 0.6; transform: scale(0.98); } 50% { opacity: 1; transform: scale(1.02); } 100% { opacity: 0.6; transform: scale(0.98); } }
     @keyframes popIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
     
-    /* Top-Right Word Pro Badge covering any residual community button */
-    #green_top_badge {
-      position: fixed; top: 9px; right: 60px; height: 32px;
-      background: #ffffff; border: 1px solid #cbd5e1; border-radius: 16px;
-      padding: 0 12px; display: flex; align-items: center; gap: 6px;
-      font-size: 11px; font-weight: 700; color: #185ABD; box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-      z-index: 50; cursor: pointer; user-select: none; font-family: system-ui, -apple-system, sans-serif;
-    }
-
-    /* Backstage Bottom-Left Developer Profile Dock */
+    /* Backstage Bottom-Left Developer Profile Dock (ONLY shown inside File/Backstage menu) */
     #green_sidebar_dock {
       position: fixed; bottom: 0; left: 0; width: 200px;
       background: linear-gradient(180deg, #3b5bdb, #2b48c5);
       padding: 10px 12px; box-sizing: border-box;
       border-top: 1px solid rgba(255,255,255,0.2);
-      z-index: 60; display: block; cursor: pointer; user-select: none;
+      z-index: 60; display: none; cursor: pointer; user-select: none;
       font-family: system-ui, -apple-system, sans-serif; color: #ffffff;
       box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
+    }
+
+    /* Floating Exit Read Mode Button (Allows 1-tap return from Book/Read Mode) */
+    #green_exit_read_mode {
+      position: fixed; top: 12px; right: 16px;
+      background: #185ABD; color: #ffffff;
+      border: 1px solid rgba(255,255,255,0.3); border-radius: 20px;
+      padding: 6px 14px; font-size: 11.5px; font-weight: 700;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+      display: none; align-items: center; gap: 6px;
+      cursor: pointer; z-index: 999; font-family: system-ui, -apple-system, sans-serif;
     }
   </style>
 
@@ -82,13 +129,13 @@
     <div style="font-size: 11px; color: #94a3b8; margin-top: 18px;">Loading workspace&hellip;</div>
   </div>
 
-  <!-- Top Right Rebranded Pro Badge -->
-  <div id="green_top_badge" onclick="toggleGreenAbout(true)" title="About Green Word Pro">
-    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#10b981;"></span>
-    <span>Green Word Pro</span>
+  <!-- Exit Read Mode Floating Button -->
+  <div id="green_exit_read_mode" onclick="exitReadMode()" title="Exit Read Mode">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    <span>Exit Read Mode</span>
   </div>
 
-  <!-- Backstage Sidebar Bottom Dock (Covers upstream text with Sachinthaka's profile) -->
+  <!-- Backstage Sidebar Bottom Dock (Docked ONLY in File menu at bottom-left) -->
   <div id="green_sidebar_dock" onclick="toggleGreenAbout(true)">
     <div style="display:flex;align-items:center;gap:10px;">
       <img src="./sachinthaka_photo.jpg" alt="Sachinthaka Sandaruwan" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #ffffff;box-shadow:0 2px 6px rgba(0,0,0,0.2);flex-shrink:0;" />
@@ -100,11 +147,6 @@
     </div>
   </div>
 
-  <!-- Floating About Trigger Button (Bottom Right) -->
-  <div id="green_about_trigger" onclick="toggleGreenAbout(true)" title="About Green Word" style="position:fixed;bottom:14px;right:14px;width:34px;height:34px;border-radius:50%;background:#185ABD;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.3);cursor:pointer;z-index:50;font-family:system-ui,sans-serif;user-select:none;transition:transform 0.2s;">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-  </div>
-
   <!-- Full About Screen Modal Dialog -->
   <div id="green_about_modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);backdrop-filter:blur(4px);z-index:10000;align-items:center;justify-content:center;font-family:system-ui,-apple-system,sans-serif;padding:16px;">
     <div style="background:#fff;border-radius:22px;max-width:370px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,0.35);overflow:hidden;animation:popIn 0.22s ease-out;position:relative;text-align:center;">
@@ -114,7 +156,7 @@
         <button onclick="toggleGreenAbout(false)" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.2);border:none;color:#fff;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;line-height:1;">&times;</button>
         <div style="font-size:11px;letter-spacing:1.2px;text-transform:uppercase;opacity:0.88;font-weight:700;">Office Suite 2026</div>
         <div style="font-size:24px;font-weight:800;margin-top:2px;letter-spacing:-0.4px;">Green Word</div>
-        <div style="font-size:11.5px;background:rgba(255,255,255,0.22);display:inline-block;padding:3px 12px;border-radius:12px;margin-top:6px;font-weight:700;">Pro Edition &bull; v1.0.0 (Build 1)</div>
+        <div style="font-size:11.5px;background:rgba(255,255,255,0.22);display:inline-block;padding:3px 12px;border-radius:12px;margin-top:6px;font-weight:700;">Pro Edition &bull; v1.0.0 (Build 2)</div>
       </div>
       
       <!-- Photo Avatar -->
@@ -141,8 +183,8 @@
             <div style="color:#64748b;margin-top:2px;">DOCX, DOC, PDF, RTF</div>
           </div>
           <div style="background:#f8fafc;padding:8px 10px;border-radius:10px;border:1px solid #e2e8f0;">
-            <div style="font-weight:700;color:#185ABD;">Ribbon Engine</div>
-            <div style="color:#64748b;margin-top:2px;">Word 2026 UI</div>
+            <div style="font-weight:700;color:#185ABD;">Sinhala Fonts</div>
+            <div style="color:#64748b;margin-top:2px;">Noto Sans & Serif</div>
           </div>
           <div style="background:#f8fafc;padding:8px 10px;border-radius:10px;border:1px solid #e2e8f0;">
             <div style="font-weight:700;color:#185ABD;">Security</div>
@@ -178,27 +220,46 @@
       if (modal) modal.style.display = show ? 'flex' : 'none';
     }
 
+    function exitReadMode() {
+      // Send Escape key to exit Read Mode
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true }));
+      window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true }));
+      
+      var c = document.getElementById('wordcraft_canvas');
+      if (c) {
+        var rect = c.getBoundingClientRect();
+        // Click Print layout button area at bottom
+        var printX = rect.width * 0.61;
+        var printY = rect.height - 12;
+        var opts = { clientX: printX, clientY: printY, bubbles: true };
+        c.dispatchEvent(new MouseEvent('click', opts));
+      }
+      var btn = document.getElementById('green_exit_read_mode');
+      if (btn) btn.style.display = 'none';
+    }
+
     // Dynamic detector for Backstage state
     function checkBackstageState() {
       var dock = document.getElementById('green_sidebar_dock');
       if (!dock) return;
 
       if (!window.globalGL) {
-        dock.style.display = 'block';
+        dock.style.display = 'none';
         return;
       }
       var gl = window.globalGL;
       var w = gl.drawingBufferWidth;
       var h = gl.drawingBufferHeight;
       if (!w || !h) {
-        dock.style.display = 'block';
+        dock.style.display = 'none';
         return;
       }
 
       try {
         var pLeft = new Uint8Array(4);
         gl.readPixels(Math.floor(w * 0.05), Math.floor(h * 0.5), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pLeft);
-        var isBlueSidebar = (pLeft[2] > 120 && pLeft[0] < 120);
+        // Backstage blue sidebar: B > 140, R < 100
+        var isBlueSidebar = (pLeft[2] > 140 && pLeft[0] < 100);
 
         if (isBlueSidebar) {
           dock.style.display = 'block';
@@ -206,20 +267,30 @@
           dock.style.display = 'none';
         }
       } catch (err) {
-        dock.style.display = 'block';
+        dock.style.display = 'none';
       }
     }
 
     setInterval(checkBackstageState, 350);
 
-    // Intercept clicks on canvas for bottom-left About
+    // Intercept clicks on canvas for bottom-left About & detect Read Mode toggle
     window.addEventListener('load', function() {
       var c = document.getElementById('wordcraft_canvas');
       if (c) {
         c.addEventListener('click', function(e) {
           var rect = c.getBoundingClientRect();
-          if (e.clientX < 200 && e.clientY > rect.height - 60) {
-            toggleGreenAbout(true);
+          // If clicked in bottom-left 200px and bottom 60px inside Backstage
+          var dock = document.getElementById('green_sidebar_dock');
+          if (dock && dock.style.display === 'block') {
+            if (e.clientX < 200 && e.clientY > rect.height - 60) {
+              toggleGreenAbout(true);
+            }
+          }
+
+          // If Book Mode icon clicked at bottom (~57% to 60% width, bottom 24px)
+          if (e.clientX > rect.width * 0.55 && e.clientX < rect.width * 0.60 && e.clientY > rect.height - 24) {
+            var exitBtn = document.getElementById('green_exit_read_mode');
+            if (exitBtn) exitBtn.style.display = 'flex';
           }
         }, true);
       }
