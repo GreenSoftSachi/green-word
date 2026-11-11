@@ -60,8 +60,11 @@
   </script>
 
   <script type="module">
-    // Pre-populate Sinhala fonts into storage before starting WASM
-    await preloadSinhalaFonts();
+    try {
+      await preloadSinhalaFonts();
+    } catch(err) {
+      console.warn('Sinhala fonts preload:', err);
+    }
 
     import init, * as bindings from './wordcraft-web-d5f8e062bd3e686e.js';
     const wasm = await init({ module_or_path: './wordcraft-web-d5f8e062bd3e686e_bg.wasm' });
