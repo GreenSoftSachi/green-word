@@ -7,18 +7,18 @@
   <link rel="icon" href="./app_icon.png" />
   
   <script>
-    // Anti-Open-Source Hardening: Disable community/discord buttons; leave user name for actual end-user
+    // Configure default clean preferences (No open-source name, author set to generic 'User')
     try {
       let cur = {};
       try { cur = JSON.parse(localStorage.getItem('wordcraft.ui') || '{}'); } catch(e){}
       cur.showDiscord = false;
-      if (cur.author === 'Sachinthaka Sandaruwan' || cur.author === 'WordCraft User' || cur.author === 'GreenWord User') {
-        delete cur.author;
-      }
+      // Set clean user name so 'WordCraft User' / 'WU' never appears
+      cur.author = 'User';
+      cur.initials = 'U';
       localStorage.setItem('wordcraft.ui', JSON.stringify(cur));
     } catch(err){}
 
-    // Pre-install Sinhala Unicode fonts into IndexedDB before WASM engine starts
+    // Pre-install Sinhala Unicode fonts into IndexedDB before WASM starts
     async function preloadSinhalaFonts() {
       try {
         const db = await new Promise((resolve, reject) => {
@@ -93,16 +93,13 @@
     
     @keyframes pulse { 0% { opacity: 0.6; transform: scale(0.98); } 50% { opacity: 1; transform: scale(1.02); } 100% { opacity: 0.6; transform: scale(0.98); } }
     @keyframes popIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
-    
-    /* Backstage Bottom-Left Developer Profile Dock (ONLY shown inside File/Backstage menu) */
-    #green_sidebar_dock {
-      position: fixed; bottom: 0; left: 0; width: 200px;
-      background: linear-gradient(180deg, #185ABD, #0e3a7c);
-      padding: 10px 12px; box-sizing: border-box;
-      border-top: 1px solid rgba(255,255,255,0.2);
-      z-index: 60; display: none; cursor: pointer; user-select: none;
-      font-family: system-ui, -apple-system, sans-serif; color: #ffffff;
-      box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
+
+    /* Options / Backstage Embedded Developer Card (Exact sibling of Green-Excel) */
+    #green_options_about_card {
+      display: none; position: fixed; left: 210px; bottom: 20px; right: 20px;
+      max-width: 520px; background: #ffffff; border: 1px solid #d1d5db;
+      border-radius: 14px; padding: 12px 16px; box-shadow: 0 4px 18px rgba(0,0,0,0.1);
+      z-index: 900; font-family: system-ui, -apple-system, sans-serif; animation: popIn 0.2s ease-out;
     }
 
     /* Floating Exit Read Mode Button (Allows 1-tap return from Book/Read Mode) */
@@ -171,19 +168,24 @@
     </svg>
   </div>
 
-  <!-- Backstage Sidebar Bottom Dock (Docked ONLY in File menu at bottom-left) -->
-  <div id="green_sidebar_dock" onclick="toggleGreenAbout(true)">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <img src="./sachinthaka_photo.jpg" alt="Sachinthaka Sandaruwan" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #ffffff;box-shadow:0 2px 6px rgba(0,0,0,0.2);flex-shrink:0;" />
+  <!-- Options Screen About Card (Embedded cleanly underneath Options, identical to Green-Excel) -->
+  <div id="green_options_about_card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div style="font-size:11.5px;font-weight:800;color:#185ABD;text-transform:uppercase;letter-spacing:0.8px;">About Green Word</div>
+      <span style="font-size:10.5px;background:#eff6ff;color:#185ABD;padding:2px 8px;border-radius:8px;font-weight:700;">Pro Edition v1.0.0</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="toggleGreenAbout(true)">
+      <img src="./sachinthaka_photo.jpg" alt="Sachinthaka Sandaruwan" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2.5px solid #185ABD;box-shadow:0 2px 8px rgba(0,0,0,0.15);flex-shrink:0;" />
       <div style="flex:1;min-width:0;">
-        <div style="font-size:11.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Sachinthaka S.</div>
-        <div style="font-size:9.5px;opacity:0.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">R&D Engineer</div>
-        <div style="font-size:9px;color:#93c5fd;font-weight:600;">Green Soft Tech</div>
+        <div style="font-size:14px;font-weight:800;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Sachinthaka Sandaruwan</div>
+        <div style="font-size:11.5px;color:#185ABD;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Research and Development Engineer</div>
+        <div style="font-size:11px;color:#64748b;font-weight:500;">Green Soft Technologies</div>
       </div>
+      <button onclick="event.stopPropagation();toggleGreenAbout(true)" style="background:#185ABD;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-weight:700;font-size:12px;cursor:pointer;box-shadow:0 2px 6px rgba(24,90,189,0.3);flex-shrink:0;">View Profile</button>
     </div>
   </div>
 
-  <!-- Full About Screen Modal Dialog -->
+  <!-- Full About Screen Modal Dialog (Identical structure and specifications to Green-Excel) -->
   <div id="green_about_modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);backdrop-filter:blur(4px);z-index:10000;align-items:center;justify-content:center;font-family:system-ui,-apple-system,sans-serif;padding:16px;">
     <div style="background:#fff;border-radius:22px;max-width:370px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,0.35);overflow:hidden;animation:popIn 0.22s ease-out;position:relative;text-align:center;">
       
@@ -192,7 +194,7 @@
         <button onclick="toggleGreenAbout(false)" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.2);border:none;color:#fff;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;line-height:1;">&times;</button>
         <div style="font-size:11px;letter-spacing:1.2px;text-transform:uppercase;opacity:0.88;font-weight:700;">Office Suite 2026</div>
         <div style="font-size:24px;font-weight:800;margin-top:2px;letter-spacing:-0.4px;">Green Word</div>
-        <div style="font-size:11.5px;background:rgba(255,255,255,0.22);display:inline-block;padding:3px 12px;border-radius:12px;margin-top:6px;font-weight:700;">Pro Edition &bull; v1.0.1</div>
+        <div style="font-size:11.5px;background:rgba(255,255,255,0.22);display:inline-block;padding:3px 12px;border-radius:12px;margin-top:6px;font-weight:700;">Pro Edition &bull; v1.0.0</div>
       </div>
       
       <!-- Photo Avatar -->
@@ -234,6 +236,7 @@
   </div>
 
   <script>
+    var globalGL = null;
     var origGetContext = HTMLCanvasElement.prototype.getContext;
     HTMLCanvasElement.prototype.getContext = function (type, attribs) {
       if (type && type.indexOf('webgl') !== -1) {
@@ -273,7 +276,6 @@
     // 1-Tap Virtual Keyboard Trigger
     function toggleVirtualKeyboard() {
       var A = window.GreenWordAndroid || window.GreenOfficeAndroid;
-      // Focus text agent input
       var inp = document.querySelector('input[type="text"]') || document.querySelector('.text-agent') || document.querySelector('input');
       if (inp) {
         try {
@@ -291,48 +293,104 @@
     }
     window.triggerSoftKeyboard = toggleVirtualKeyboard;
 
-    // Dynamic detector for Backstage state
+    // Track backstage visibility state
+    var inBackstage = false;
+
+    // Dynamic detector for Backstage & Options screen (Sibling of Green-Excel)
     function checkBackstageState() {
-      var dock = document.getElementById('green_sidebar_dock');
-      if (!dock) return;
+      var card = document.getElementById('green_options_about_card');
+      if (!card) return;
 
       if (!window.globalGL) {
-        dock.style.display = 'none';
+        card.style.display = inBackstage ? 'block' : 'none';
         return;
       }
       var gl = window.globalGL;
       var w = gl.drawingBufferWidth;
       var h = gl.drawingBufferHeight;
       if (!w || !h) {
-        dock.style.display = 'none';
+        card.style.display = inBackstage ? 'block' : 'none';
         return;
       }
 
       try {
         var pLeft = new Uint8Array(4);
         gl.readPixels(Math.floor(w * 0.05), Math.floor(h * 0.5), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pLeft);
-        // Backstage deep blue sidebar: B > 140, R < 100
-        var isBlueSidebar = (pLeft[2] > 140 && pLeft[0] < 100);
+        // Deep blue sidebar: B > 130, R < 100
+        var isBlueSidebar = (pLeft[2] > 130 && pLeft[0] < 100);
 
         if (isBlueSidebar) {
+          inBackstage = true;
           var pRight = new Uint8Array(4);
-          gl.readPixels(Math.floor(w * 0.4), Math.floor(h * 0.5), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pRight);
-          // Backstage pane: light/white background (R, G, B > 210)
-          var isLightPane = (pRight[0] > 210 && pRight[1] > 210 && pRight[2] > 210);
+          gl.readPixels(Math.floor(w * 0.35), Math.floor(h * 0.5), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pRight);
+          // Light/white pane on the right: R, G, B > 225
+          var isWhitePane = (pRight[0] > 225 && pRight[1] > 225 && pRight[2] > 225);
 
-          if (isLightPane) {
-            dock.style.display = 'block';
+          if (isWhitePane) {
+            card.style.display = 'block';
+            var c = document.getElementById('wordcraft_canvas');
+            if (c) {
+              var rect = c.getBoundingClientRect();
+              var sidebarPx = Math.max(160, Math.floor(rect.width * 0.18));
+              card.style.left = (sidebarPx + 24) + 'px';
+            }
             return;
           }
+        } else {
+          inBackstage = false;
         }
       } catch (err) {}
 
-      dock.style.display = 'none';
+      card.style.display = 'none';
     }
 
-    setInterval(checkBackstageState, 350);
+    setInterval(checkBackstageState, 300);
 
-    // Tap-to-type touch listener for Android
+    // Sidebar "About" interceptor:
+    // When the user taps the "About" button in the blue sidebar (bottom left 0-65px from bottom),
+    // INTERCEPT IT BEFORE WASM SEES IT, so the upstream Wordcraft dialog NEVER opens!
+    function interceptSidebarAbout(e) {
+      var c = document.getElementById('wordcraft_canvas');
+      if (!c) return;
+      var rect = c.getBoundingClientRect();
+      var touch = (e.changedTouches && e.changedTouches[0]) || e;
+      
+      // If clicking inside the blue sidebar area (left 200px or 20% width)
+      if (touch.clientX < 220 || touch.clientX < (rect.width * 0.22)) {
+        var fromBottom = rect.bottom - touch.clientY;
+        // About item is located at the very bottom (0px to 65px from bottom)
+        if (fromBottom >= 0 && fromBottom <= 65) {
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          if (e.cancelable) e.preventDefault();
+          // Open Sachinthaka Sandaruwan's Developer Profile modal!
+          toggleGreenAbout(true);
+          return false;
+        }
+
+        // Track when clicking top '<' back arrow (top left 50px) to exit backstage
+        if (touch.clientY < 50 && touch.clientX < 50) {
+          inBackstage = false;
+          var card = document.getElementById('green_options_about_card');
+          if (card) card.style.display = 'none';
+        }
+      }
+
+      // Track when clicking 'File' tab on ribbon (top left ~55px)
+      if (touch.clientY > 25 && touch.clientY < 55 && touch.clientX < 75) {
+        inBackstage = true;
+        setTimeout(checkBackstageState, 100);
+      }
+    }
+
+    // Capture early on window to completely block WASM from receiving the click
+    window.addEventListener('pointerdown', interceptSidebarAbout, true);
+    window.addEventListener('pointerup', interceptSidebarAbout, true);
+    window.addEventListener('click', interceptSidebarAbout, true);
+    window.addEventListener('touchstart', interceptSidebarAbout, { capture: true, passive: false });
+    window.addEventListener('touchend', interceptSidebarAbout, { capture: true, passive: false });
+
+    // Tap-to-type soft keyboard trigger for Android
     (function () {
       var A = window.GreenWordAndroid || window.GreenOfficeAndroid;
       var lastTouch = -1e9, lastShow = -1e9;
@@ -364,15 +422,6 @@
         
         var touch = e.changedTouches ? e.changedTouches[0] : e;
         var rect = c.getBoundingClientRect();
-        
-        // If clicked in bottom-left inside Backstage
-        var dock = document.getElementById('green_sidebar_dock');
-        if (dock && dock.style.display === 'block') {
-          if (touch.clientX < 200 && touch.clientY > rect.height - 60) {
-            toggleGreenAbout(true);
-            return;
-          }
-        }
 
         // If Book Mode icon clicked at bottom (~55% to 60% width, bottom 24px)
         if (touch.clientX > rect.width * 0.55 && touch.clientX < rect.width * 0.60 && touch.clientY > rect.height - 24) {
@@ -380,8 +429,8 @@
           if (exitBtn) exitBtn.style.display = 'flex';
         }
 
-        // If tapping document area (between top ribbon 110px and bottom bar 35px)
-        if (touch.clientY > 115 && touch.clientY < (rect.height - 35)) {
+        // If tapping document editor area (between top ribbon 110px and bottom bar 35px, and not in sidebar)
+        if (!inBackstage && touch.clientY > 115 && touch.clientY < (rect.height - 35)) {
           setTimeout(showSoftKeyboard, 100);
         }
       }, true);
