@@ -7,6 +7,22 @@
   <link rel="icon" href="./app_icon.png" />
   
   <script>
+    window.globalGL = null;
+    (function () {
+      var origGetContext = HTMLCanvasElement.prototype.getContext;
+      HTMLCanvasElement.prototype.getContext = function (type, attribs) {
+        if (type && type.indexOf('webgl') !== -1) {
+          attribs = attribs || {};
+          attribs.preserveDrawingBuffer = true;
+        }
+        var ctx = origGetContext.call(this, type, attribs);
+        if (type && type.indexOf('webgl') !== -1) {
+          window.globalGL = ctx;
+        }
+        return ctx;
+      };
+    })();
+
     // Configure default clean preferences (No open-source name, author set to generic 'User')
     try {
       let cur = {};
@@ -212,20 +228,6 @@
   </div>
 
   <script>
-    var globalGL = null;
-    var origGetContext = HTMLCanvasElement.prototype.getContext;
-    HTMLCanvasElement.prototype.getContext = function (type, attribs) {
-      if (type && type.indexOf('webgl') !== -1) {
-        attribs = attribs || {};
-        attribs.preserveDrawingBuffer = true;
-      }
-      var ctx = origGetContext.call(this, type, attribs);
-      if (type && type.indexOf('webgl') !== -1) {
-        window.globalGL = ctx;
-      }
-      return ctx;
-    };
-
     function toggleGreenAbout(show) {
       var modal = document.getElementById('green_about_modal');
       if (modal) modal.style.display = show ? 'flex' : 'none';
@@ -273,42 +275,50 @@
     var inBackstage = false;
 
     function isBackstageOpen() {
-      if (!window.globalGL) return inBackstage;
+      if (inBackstage) return true;
+      var gl = window.globalGL;
+      if (!gl) return inBackstage;
       try {
-        var gl = window.globalGL;
-        var w = gl.drawingBufferWidth;
-        var h = gl.drawingBufferHeight;
+        var w = gl.drawingBufferWidth || gl.canvas.width;
+        var h = gl.drawingBufferHeight || gl.canvas.height;
         if (!w || !h) return inBackstage;
         var p = new Uint8Array(4);
         gl.readPixels(Math.floor(w * 0.05), Math.floor(h * 0.5), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, p);
-        return (p[2] > 120 && p[0] < 100);
-      } catch (e) {
-        return inBackstage;
-      }
+        if (p[2] > 105 && p[0] < 120) {
+          inBackstage = true;
+          return true;
+        }
+      } catch (e) {}
+      return inBackstage;
     }
 
     // Sidebar "About" interceptor:
-    // When the user taps the "About" button in the blue sidebar (bottom left 0-65px from bottom),
+    // When the user taps the "About" button in the blue sidebar (bottom left 0-85px from bottom),
     // INTERCEPT IT BEFORE WASM SEES IT, so the upstream Wordcraft dialog NEVER opens!
     function interceptSidebarAbout(e) {
       var c = document.getElementById('wordcraft_canvas');
       if (!c) return;
       var rect = c.getBoundingClientRect();
       var touch = (e.changedTouches && e.changedTouches[0]) || e;
+      var clientX = touch.clientX;
+      var clientY = touch.clientY;
 
-      // Track 'File' tab on ribbon (top left 25-55px Y, < 75px X)
-      if (touch.clientY > 25 && touch.clientY < 55 && touch.clientX < 75) {
+      // Track 'File' tab on ribbon (top left 20-65px Y, < 100px X)
+      if (clientY > 20 && clientY < 65 && clientX < 100) {
         inBackstage = true;
       }
-      // Track '<' back arrow in Backstage (top left < 50px)
-      if (touch.clientY < 50 && touch.clientX < 50) {
+      // Track '<' back arrow in Backstage (top left < 55px)
+      if (clientY < 55 && clientX < 60) {
         inBackstage = false;
       }
 
-      // If Backstage is open, intercept About click at bottom-left
-      if (isBackstageOpen() && (touch.clientX < 220 || touch.clientX < (rect.width * 0.22))) {
-        var fromBottom = rect.bottom - touch.clientY;
-        if (fromBottom >= 0 && fromBottom <= 65) {
+      // Check if clicking in sidebar area (left 260px or 25% of width)
+      var inSidebar = (clientX < 260 || clientX < (rect.width * 0.25));
+      var fromBottom = rect.bottom - clientY;
+
+      // Bottom-left About button (bottom 0-85px)
+      if (inSidebar && fromBottom >= 0 && fromBottom <= 85) {
+        if (isBackstageOpen() || inBackstage) {
           e.stopPropagation();
           e.stopImmediatePropagation();
           if (e.cancelable) e.preventDefault();
