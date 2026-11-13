@@ -1160,23 +1160,31 @@ fn about_dialog(ui: &mut Ui, d: &mut Dialog) -> bool {
     let Dialog::About { .. } = d else {
         return false;
     };
-    ui.set_width(460.0);
-    ui.vertical_centered(|ui| {
-        ui.add_space(8.0);
-        ui.label(egui::RichText::new("Green Word").font(semibold(22.0)).color(egui::Color32::from_rgb(24, 90, 189)));
-        ui.label(egui::RichText::new("Office Suite 2026 Pro Edition • v1.0.0").small().strong());
-        ui.add_space(14.0);
-        ui.label(egui::RichText::new("Sachinthaka Sandaruwan").font(semibold(17.0)));
-        ui.label(egui::RichText::new("Research and Development Engineer\n(Software and Hardware)").color(egui::Color32::from_rgb(24, 90, 189)).strong());
-        ui.label(egui::RichText::new("Green Soft Technologies").strong());
-        ui.add_space(12.0);
-        ui.separator();
-        ui.add_space(10.0);
-        ui.label(egui::RichText::new("• Core Engine: Compiled Rust & WebAssembly Core\n• Typography: Sinhala Unicode & Global Font Rendering\n• File Formats: DOCX, RTF, PDF, Plain Text\n• Privacy & Security: 100% Offline & Private").small());
-        ui.add_space(12.0);
-    });
-    // One Close button: About has nothing to cancel.
-    super::chrome::close_button(ui)
+    #[cfg(target_arch = "wasm32")]
+    {
+        let _ = js_sys::eval("if (window.toggleGreenAbout) window.toggleGreenAbout(true);");
+        return true;
+    }
+    #[allow(unreachable_code)]
+    {
+        ui.set_width(460.0);
+        ui.vertical_centered(|ui| {
+            ui.add_space(8.0);
+            ui.label(egui::RichText::new("Green Word").font(semibold(22.0)).color(egui::Color32::from_rgb(16, 124, 65)));
+            ui.label(egui::RichText::new("Office Suite 2026 Pro Edition • v1.0.0").small().strong());
+            ui.add_space(14.0);
+            ui.label(egui::RichText::new("Sachinthaka Sandaruwan").font(semibold(17.0)));
+            ui.label(egui::RichText::new("Research and Development Engineer\n(Software and Hardware)").color(egui::Color32::from_rgb(16, 124, 65)).strong());
+            ui.label(egui::RichText::new("Green Soft Technologies").strong());
+            ui.add_space(12.0);
+            ui.separator();
+            ui.add_space(10.0);
+            ui.label(egui::RichText::new("• Core Engine: Compiled Rust & WebAssembly Core\n• Documents: Rich Text & Sinhala Typography\n• File Formats: DOCX, RTF, PDF, Plain Text\n• Privacy & Security: 100% Offline & Private").small());
+            ui.add_space(12.0);
+        });
+        // One Close button: About has nothing to cancel.
+        super::chrome::close_button(ui)
+    }
 }
 
 fn discard_recovery_dialog(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {

@@ -1,4 +1,4 @@
-name: Build Green Word v9 (APK and AAB)
+name: Build Green Word v10 (APK and AAB)
 
 on:
   push:
@@ -78,38 +78,39 @@ jobs:
     - name: Prepare Artifacts
       run: |
         mkdir -p dist/android
-        cp android/app/build/outputs/apk/release/*.apk dist/android/Green-Word-v9.apk
-        cp android/app/build/outputs/bundle/release/*.aab dist/android/Green-Word-v9.aab
+        cp android/app/build/outputs/apk/release/*.apk dist/android/Green-Word-v10.apk
+        cp android/app/build/outputs/bundle/release/*.aab dist/android/Green-Word-v10.aab
         ls -la dist/android/
 
     - name: Upload Release APK
       uses: actions/upload-artifact@v4
       with:
-        name: Green-Word-v9-APK
-        path: dist/android/Green-Word-v9.apk
+        name: Green-Word-v10-APK
+        path: dist/android/Green-Word-v10.apk
         retention-days: 30
 
     - name: Upload Play Store AAB Bundle
       uses: actions/upload-artifact@v4
       with:
-        name: Green-Word-v9-AAB
-        path: dist/android/Green-Word-v9.aab
+        name: Green-Word-v10-AAB
+        path: dist/android/Green-Word-v10.aab
         retention-days: 30
 
-    - name: Create Public GitHub Release v9
+    - name: Create Public GitHub Release v10
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: v9
-        name: Green Word v9
+        tag_name: v10
+        name: Green Word v10
         body: |
-          ### Green Word v9 Android Release
+          ### Green Word v10 Android Release
           - Freshly compiled from Rust source code with custom Green Word engine
-          - Developer Profile: Sachinthaka Sandaruwan (Green Soft Technologies)
+          - Developer Profile: Sachinthaka Sandaruwan (Green Soft Technologies) with photo avatar
+          - Focus Mode 1-Tap Exit Button (both top bar and responsive overlay)
           - Offline Word Processor with Sinhala Typography
           - Direct download without login
         files: |
-          dist/android/Green-Word-v9.apk
-          dist/android/Green-Word-v9.aab
+          dist/android/Green-Word-v10.apk
+          dist/android/Green-Word-v10.aab
         draft: false
         prerelease: false
       env:

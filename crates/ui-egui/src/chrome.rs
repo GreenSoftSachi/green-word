@@ -680,6 +680,10 @@ pub fn screen_bar(app: &mut WordApp, ui: &mut Ui, screen: Screen) {
     egui::Panel::top("screen_bar").exact_size(SCREEN_BAR_HEIGHT).show_separator_line(false).frame(egui::Frame::NONE.fill(fill)).show(ui, |ui| {
         let full = ui.max_rect();
         if screen == Screen::Focus {
+            #[cfg(target_arch = "wasm32")]
+            {
+                let _ = js_sys::eval("if (window.setFocusModeActive) window.setFocusModeActive(true);");
+            }
             let r = Rect::from_center_size(full.center(), vec2(40.0, 20.0));
             let resp = ui.allocate_rect(r, Sense::click());
             let shade = if resp.hovered() || app.focus_ribbon { egui::Color32::from_gray(70) } else { egui::Color32::from_gray(40) };
@@ -689,7 +693,28 @@ pub fn screen_bar(app: &mut WordApp, ui: &mut Ui, screen: Screen) {
             if resp.on_hover_text(tl!("Show the ribbon")).clicked() {
                 let _ = app.run("ui.focusRibbon", json!({}));
             }
+
+            // Exit Focus button directly on top right of the screen bar
+            let exit_w = 96.0;
+            let exit_h = 22.0;
+            let exit_r = Rect::from_min_size(pos2(full.max.x - exit_w - 12.0, full.center().y - exit_h * 0.5), vec2(exit_w, exit_h));
+            let exit_resp = ui.allocate_rect(exit_r, Sense::click());
+            let exit_bg = if exit_resp.hovered() { egui::Color32::from_rgb(180, 40, 40) } else { egui::Color32::from_rgb(16, 124, 65) };
+            ui.painter().rect_filled(exit_r, 4.0, exit_bg);
+            paint_text(ui.painter(), pos2(exit_r.center().x, exit_r.min.y + 3.0), Align2::CENTER_TOP, "✕ Exit Focus", &semibold(12.0), 0.0, egui::Color32::WHITE);
+            exit_resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, "Exit Focus"));
+            if exit_resp.on_hover_text(tl!("Exit Focus (Esc)")).clicked() {
+                let _ = app.run("view.focus", json!({"value": false}));
+                #[cfg(target_arch = "wasm32")]
+                {
+                    let _ = js_sys::eval("if (window.setFocusModeActive) window.setFocusModeActive(false);");
+                }
+            }
         } else {
+            #[cfg(target_arch = "wasm32")]
+            {
+                let _ = js_sys::eval("if (window.setFocusModeActive) window.setFocusModeActive(false);");
+            }
             ui.scope_builder(egui::UiBuilder::new().max_rect(Rect::from_center_size(full.center(), vec2(260.0, 22.0))), |ui| {
                 search_box(app, ui, 22.0);
             });
