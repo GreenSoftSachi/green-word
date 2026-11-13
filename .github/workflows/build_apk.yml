@@ -1,4 +1,4 @@
-name: Build Green Word v8 (APK and AAB)
+name: Build Green Word v9 (APK and AAB)
 
 on:
   push:
@@ -10,12 +10,55 @@ permissions:
 
 jobs:
   build:
-    name: Build Native Green Word APK and Play Store Bundle
+    name: Compile Rust WASM Core & Build Native Android APK
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
+
+    - name: Set up Rust Toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: wasm32-unknown-unknown
+
+    - name: Install Trunk WebAssembly Bundler
+      run: |
+        TRUNK_VER="v0.21.7"
+        wget -qO- "https://github.com/trunk-rs/trunk/releases/download/${TRUNK_VER}/trunk-x86_64-unknown-linux-gnu.tar.gz" | tar -xzf- -C /usr/local/bin
+        trunk --version
+
+    - name: Compile Custom Green Word WebAssembly Core
+      run: |
+        cd apps/wordcraft-web
+        trunk build --release
+        cd ../..
+        ls -la dist/web/
+
+    - name: Deploy Fresh WebAssembly Assets to Android
+      run: |
+        # Remove old wasm and js files
+        rm -f android/app/src/main/assets/www/wordcraft-web*.wasm
+        rm -f android/app/src/main/assets/www/wordcraft-web*.js
+        rm -rf android/app/src/main/assets/www/snippets
+
+        # Copy fresh compiled assets
+        cp dist/web/*.wasm android/app/src/main/assets/www/
+        cp dist/web/*.js android/app/src/main/assets/www/
+        cp -r dist/web/snippets android/app/src/main/assets/www/
+
+        # Detect generated wasm and js filenames
+        NEW_WASM=$(basename $(ls dist/web/*_bg.wasm))
+        NEW_JS=$(basename $(ls dist/web/*.js | grep -v snippets))
+        echo "Fresh WASM: $NEW_WASM"
+        echo "Fresh JS: $NEW_JS"
+
+        # Update index.html to load the newly compiled WASM and JS
+        sed -i -E "s/wordcraft-web-[a-f0-9]+_bg\.wasm/${NEW_WASM}/g" android/app/src/main/assets/www/index.html
+        sed -i -E "s/wordcraft-web-[a-f0-9]+\.js/${NEW_JS}/g" android/app/src/main/assets/www/index.html
+        sed -i -E "s/snippets\/eframe-[a-f0-9]+/$(basename $(ls -d dist/web/snippets/eframe-*))/g" android/app/src/main/assets/www/index.html
+
+        grep -n "$NEW_WASM" android/app/src/main/assets/www/index.html
 
     - name: Set up Java 17
       uses: actions/setup-java@v4
@@ -34,38 +77,39 @@ jobs:
 
     - name: Prepare Artifacts
       run: |
-        mkdir -p dist
-        cp android/app/build/outputs/apk/release/*.apk dist/Green-Word-v8.apk
-        cp android/app/build/outputs/bundle/release/*.aab dist/Green-Word-v8.aab
-        ls -la dist/
+        mkdir -p dist/android
+        cp android/app/build/outputs/apk/release/*.apk dist/android/Green-Word-v9.apk
+        cp android/app/build/outputs/bundle/release/*.aab dist/android/Green-Word-v9.aab
+        ls -la dist/android/
 
     - name: Upload Release APK
       uses: actions/upload-artifact@v4
       with:
-        name: Green-Word-v8-APK
-        path: dist/Green-Word-v8.apk
+        name: Green-Word-v9-APK
+        path: dist/android/Green-Word-v9.apk
         retention-days: 30
 
     - name: Upload Play Store AAB Bundle
       uses: actions/upload-artifact@v4
       with:
-        name: Green-Word-v8-AAB
-        path: dist/Green-Word-v8.aab
+        name: Green-Word-v9-AAB
+        path: dist/android/Green-Word-v9.aab
         retention-days: 30
 
-    - name: Create Public GitHub Release v8
+    - name: Create Public GitHub Release v9
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: v8
-        name: Green Word v8
+        tag_name: v9
+        name: Green Word v9
         body: |
-          ### Green Word v8 Android Release
-          - Direct download without login
+          ### Green Word v9 Android Release
+          - Freshly compiled from Rust source code with custom Green Word engine
           - Developer Profile: Sachinthaka Sandaruwan (Green Soft Technologies)
           - Offline Word Processor with Sinhala Typography
+          - Direct download without login
         files: |
-          dist/Green-Word-v8.apk
-          dist/Green-Word-v8.aab
+          dist/android/Green-Word-v9.apk
+          dist/android/Green-Word-v9.aab
         draft: false
         prerelease: false
       env:
